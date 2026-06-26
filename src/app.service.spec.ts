@@ -10,7 +10,6 @@ describe('AppService', () => {
     nombre: 'Juan Cruz',
     nacimiento: new Date('1990-01-01'),
     ciudad: 'Santiago',
-    gustos: ['leer', 'viajar', 'programar'],
   };
 
   beforeEach(async () => {
