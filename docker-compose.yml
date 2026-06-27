@@ -1,0 +1,61 @@
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: nest_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nest_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres_db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  api_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest_api_app
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    depends_on:
+      - postgres_db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 300M
+
+volumes:
+  postgres_data:

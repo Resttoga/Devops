@@ -1,35 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { Persona } from './interface';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { PersonaEntity } from './persona.entity';
 import { CreatePersonaDto } from './person-dto';
 
 @Injectable()
 export class AppService {
+  constructor(
+    @InjectRepository(PersonaEntity)
+    private readonly personaRepository: Repository<PersonaEntity>,
+  ) {}
 
-  private personas: Persona[] = [];
-
-  getPersons(): Persona[] {
-    return this.personas;
+  async getPersons(): Promise<PersonaEntity[]> {
+    return await this.personaRepository.find();
   }
 
-  addPerson(createPersonaDto: CreatePersonaDto): Persona {
-    const nuevaPersona: Persona = {
+  async addPerson(createPersonaDto: CreatePersonaDto): Promise<PersonaEntity> {
+    const nuevaPersona = this.personaRepository.create({
       rut: createPersonaDto.rut,
       nombre: createPersonaDto.nombre,
-      nacimiento: new Date(createPersonaDto.nacimiento), 
+      nacimiento: new Date(createPersonaDto.nacimiento),
       ciudad: createPersonaDto.ciudad,
-      gustos: createPersonaDto.gustos,
-    };
+      gustos: createPersonaDto.gustos || [],
+    });
 
-    this.personas.push(nuevaPersona);
-    return nuevaPersona;
+    return await this.personaRepository.save(nuevaPersona);
   }
 
-  deletePerson(rut: string): string {
-    const index = this.personas.findIndex((p) => p.rut === rut);
-    if (index !== -1) {
-      this.personas.splice(index, 1);
-      return `Persona ${rut} eliminada`;
+  async deletePerson(rut: string): Promise<string> {
+    const resultado = await this.personaRepository.delete({ rut });
+    
+    if (resultado.affected === 0) {
+      throw new NotFoundException(`Persona con RUT ${rut} no encontrada`);
     }
-    return "Persona no encontrada";
+    
+    return `Persona ${rut} eliminada`;
   }
 }
